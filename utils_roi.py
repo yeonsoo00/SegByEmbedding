@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -56,7 +57,7 @@ class ClusterEmbedding(nn.Module):
         x = x / torch.norm(x, dim=1, keepdim=True)  # Normalize embeddings
         return x
 
-def contrastive_loss(embeddings, labels, cluster_centers, margin=3.0):  # Increased margin
+def contrastive_loss(embeddings, labels, cluster_centers, margin=3.0, weight=3.0):  # Increased margin
     intra_loss = 0  
     inter_loss = 0  
     num_clusters = cluster_centers.shape[0]
@@ -78,11 +79,11 @@ def contrastive_loss(embeddings, labels, cluster_centers, margin=3.0):  # Increa
 
                 num_pairs += 1
 
-    inter_loss /= num_pairs  # Normalize
-    return intra_loss + 3.0 * inter_loss  # Increase weight of inter-cluster loss
+    inter_loss /= num_pairs
+    return intra_loss + weight * inter_loss 
 
 
-def visualize_RGBspace(X, y):
+def visualize_RGBspace(X, y, path2save):
     cluster_colors = np.array([
             [71, 69, 130],   # Blue
             [173, 109, 66],  # Brown
@@ -99,5 +100,5 @@ def visualize_RGBspace(X, y):
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(projected_embeddings[:, 0], projected_embeddings[:, 1], projected_embeddings[:, 2], color=point_colors, s=50)
-    ax.save(os.path.join(save2, 'EmbeddingSpaceRGB.png'))
+    ax.save(os.path.join(path2save, 'EmbeddingSpaceRGB.png'))
     
