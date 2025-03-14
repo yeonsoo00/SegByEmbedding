@@ -35,6 +35,7 @@ if __name__ == "__main__":
     cluster_idx = args.cluster_idx
 
     ##################################ROI Detection##########################################
+    
     # Load data
     path2img = '/home/yec23006/projects/research/KneeGrowthPlate/Knee_GrowthPlate/Images/CCC_K05_hK_FL1_s1_shift3_So.jpg'
     image = load_data(path2img)
@@ -198,9 +199,29 @@ if __name__ == "__main__":
     classifier.fit(embeddings, labels) # Train
     predicted_labels = classifier.predict(embeddings_eval) # Eval
 
-    
+    classifier = CNNClassifier(embedding_dim = patch_embedding_dim).to(device)
+    criterion = nn.BCELoss()
+    optimizer = optim.Adam(classifier.parameters(), lr=0.001)
+    X_train = torch.tensor(embeddings, dtype=torch.float32).unsqueeze(1)
+    y_train = torch.tensor(labels, dtype=torch.float32).unsqueeze(1)
+    train_dataset = TensorDataset(X_train, y_train)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+
+    num_epochs = 20
+    print("Patch Classifier is training.")
+    for epoch in range(num_epochs):
+        for batch_X, batch_y in train_loader:
+            batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+            optimizer.zero_grad()
+            outputs = classifier(batch_X)
+            loss = criterion(outputs, batch_y)
+            loss.backward()
+            optimizer.step()
+
+
 
     # Patch reconstruction to original position
     reconstructed_image = reconstruct_image_from_patches(path2img, filtered_patches, filtered_positions, predicted_labels)
     reconstructed_image = cv2.cvtColor(reconstructed_image)
     cv2.imwrite(os.path.join(save2, "reconstructed_patches.png"), reconstructed_image)
+
